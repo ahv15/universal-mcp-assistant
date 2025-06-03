@@ -39,6 +39,7 @@ universal-mcp-assistant/
      - If no MCP tool is available for a given request, the assistant replies with a graceful fallback message (for example: “I’m currently unable to find a tool to order pizza. You might want to use a delivery app directly.”).
 - **FastAPI Backend**: High-performance async API with automatic documentation
 - **Modern UI**: Tailwind CSS-powered chat interface
+- **Agent Observability**: Full visibility into every Letta‐agent tool call, return value, and core‐memory update.
 
 
 ## Screenshots
@@ -53,6 +54,19 @@ universal-mcp-assistant/
 >    > “I’m currently unable to find a tool to order pizza due to a technical issue. You might want to try using a pizza delivery app directly like Domino’s, Pizza Hut, or Uber Eats.”  
 
 ---
+
+
+## Agent Observability
+
+When you spin up `universal_mcp_assistant` through Letta, you can watch each step of the agent’s reasoning (tool calls, arguments, returns, and memory) in real time. The screenshot below shows:
+
+- The Letta “Agent Simulator” pane where a `use_tool` call is made  
+- The JSON response payload coming back from the tool (e.g., `tool_return_message`)  
+- How core memory and tool outputs live side-by-side  
+
+![Agent Simulator View](assets/images/agent-simulator.png)
+
+> In this view you can see the raw arguments sent to `use_tool`, the JSON that comes back (`"status":"OK", "message":…`), and how the agent stitches that response into its next reply.
 
 ## Quick Start
 
