@@ -42,6 +42,26 @@ universal-mcp-assistant/
 - **Agent Observability**: Full visibility into every Letta‐agent tool call, return value, and core‐memory update.
 
 
+## Architecture
+
+Under the hood, `universal_mcp_assistant` uses Letta, which itself is built on MemGPT. MemGPT treats an LLM as an “operating system” that can manage its own context windows, memory blocks, and tool invocations. In other words:
+
+1. **MemGPT as LLM-OS**  
+   - When your Letta agent receives a user question, MemGPT helps it automatically chunk and manage long conversations so that no context is ever lost.  
+   - MemGPT’s “LLM-as-OS” paradigm means Letta can dynamically append to, read from, or evict parts of its core memory—allowing the agent to stay within token limits while still “remembering” earlier exchanges.
+
+2. **Letta on Top of MemGPT**  
+   - Letta gets access to additional tools (e.g., `use_tool`, `search_servers`) via and MCP server which adds higher‐level orchestration on top of MemGPT’s memory primitives.  
+   - When Letta needs to call an MCP server, it asks MemGPT to package up the arguments (user message + memory) into a well-formed JSON payload.  
+   - MemGPT then ensures that this payload fits within the model’s context window. After the tool returns, MemGPT appends the result back into memory so Letta can use it in the final response.
+
+3. **Putting It All Together**  
+   - Your FastAPI endpoints simply forward user messages to Letta.  
+   - Letta leverages MemGPT’s memory management features to preserve long-running conversational state.  
+   - The Smithery Toolbox (and any other MCP servers) are invoked via Letta’s “tool” API, which MemGPT orchestrates under the hood.
+
+---
+
 ## Screenshots
 
 ![Chat Interface](assets/images/chat-screenshot.png)
