@@ -28,11 +28,31 @@ universal-mcp-assistant/
 
 ## Features
 
-- **Modular Architecture**: Clean separation of concerns with dedicated modules for API, core logic, and models
 - **MCP Integration**: Seamless integration with MCP servers through Letta agents
+ 1. **Single “Toolbox” MCP Server (Smithery)**  
+     - Under the hood, all high-level requests go through one central “Toolbox” MCP server.  
+     - The toolbox examines the user’s query, figures out which specialized MCP server (weather, YouTube, GitHub, etc.) should handle it, and forwards along relevant arguments.  
+     - This means you only need to configure one “Toolbox” entry in `config/mcp_config.json`; it will dynamically route each request to the correct MCP.
+ 2. **Automatic Tool Routing**  
+     - Weather queries (e.g. “What’s the weather in Atlanta?”) and similar tools which don't need configuration are detected and automatically dispatched to the weather MCP tool.  
+     - If the user asks about YouTube recommendations (or any tool that requires an API key), the assistant will respond with a prompt to configure that particular MCP (e.g., “Please configure the YouTube MCP server with your API key”).  
+     - If no MCP tool is available for a given request, the assistant replies with a graceful fallback message (for example: “I’m currently unable to find a tool to order pizza. You might want to use a delivery app directly.”).
 - **FastAPI Backend**: High-performance async API with automatic documentation
 - **Modern UI**: Tailwind CSS-powered chat interface
-- **CORS Support**: Configurable CORS middleware for cross-origin requests
+
+
+## Screenshots
+
+![Chat Interface](assets/images/chat-screenshot.png)
+
+> **Demonstration of automatic tool routing**  
+> 1. **Weather Query**: The assistant sees “Could you give me the weather in Atlanta?” and automatically calls the weather MCP.  
+> 2. **YouTube Recommendations**: When the user asks for YouTube recommendations, the assistant replies:  
+>    > “To provide you with YouTube recommendations, the tool needs to be configured first. Please configure it here: [YouTube MCP Server Configuration](https://smithery.ai/server/@coyaSONG/youtube-mcp-server/config).”  
+> 3. **Fallback Example**: If the user says “Can you help me order a pizza?” (and no public pizza-ordering MCP is available yet), the assistant responds with a polite fallback:  
+>    > “I’m currently unable to find a tool to order pizza due to a technical issue. You might want to try using a pizza delivery app directly like Domino’s, Pizza Hut, or Uber Eats.”  
+
+---
 
 ## Quick Start
 
@@ -115,7 +135,7 @@ Send a message to the MCP assistant.
 
 Configure your MCP servers in `config/mcp_config.json`. The application currently supports:
 
-- **Smithery Toolbox**: Provides various utility tools
+- **Smithery Toolbox**: Acts as a single “tool gateway” that your app queries. It inspects each request, dynamically forwards it to the correct hosted MCP server (e.g., weather, YouTube, GitHub), and then returns the tool’s response back to your assistant.
 - **Custom MCP Servers**: Add your own server configurations
 
 ### Letta Agent
