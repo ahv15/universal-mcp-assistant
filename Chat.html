@@ -97,7 +97,7 @@
 
       try {
         // b) Send POST request to /chat (Flask endpoint)
-        const response = await fetch("/chat", {
+        const response = await fetch("http://localhost:8000/chat", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
