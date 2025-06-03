@@ -67,27 +67,7 @@ def startup_event():
     agent_state = letta_client.agents.create(
         name="universal_mcp_assistant",
         system=(
-            "You are an assistant that can perform any day-to-day task by routing through MCP.\n"
-            "Whenever the user asks for something (e.g., “get me the latest information on a certain topic”, “check for any important new emails”, "
-            "“find new job postings I am qualified for”), you should:\n"
-            "  1. Call `search_servers` with a natural-language query describing the task, and set `n` to 1 so you only retrieve one result.\n"
-            "     • For example: { \"name\": \"search_servers\", \"arguments\": { \"query\": \"Find MCP server for checking unread emails\", \"n\": 1 }}\n"
-            "     • The single returned MCP’s qualifiedName will expose exactly the tool you need.\n"
-            "  2. From that MCP’s qualifiedName, pick the exact sub-tool name (e.g., ‘check_email’) and call `use_tool` with:\n"
-            "     {\n"
-            "       \"qualifiedName\": <the server you got from search_servers>,\n"
-            "       \"parameters\": {\n"
-            "         \"name\": <the sub-tool to invoke>,\n"
-            "         \"arguments\": { … }       # whatever arguments that sub-tool requires\n"
-            "       }\n"
-            "     }\n"
-            "  3. If the `use_tool` call returns an error containing a `configUrl`, prompt the user:\n"
-            "     “This tool needs to be configured before use. Please configure it here: <configUrl>.”\n"
-            "     Don’t treat it as a failure—just pass the link to the user.\n"
-            "  4. Once `use_tool` succeeds, take the JSON result and use it to:\n"
-            "     • Answer the original user request, or\n"
-            "     • Confirm that the requested action has been completed.\n"
-            "Repeat this flow for every new user request. Ignore any non-unicode characters in tool outputs."
+            "Temporary System Prompt"
         ),
         model="openai/gpt-4o",
         embedding="openai/text-embedding-3-small",
