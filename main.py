@@ -1,23 +1,12 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import os
-
-from letta_client import Letta
-from letta_client.types.child_tool_rule import ChildToolRule
-
-# 1) Pydantic Schemas
-
-class ChatRequest(BaseModel):
-    message: str
-
-class ChatResponse(BaseModel):
-    reply: str
+from src.core.letta_client import LettaManager
+from src.core.chat_service import ChatService
+from src.api.chat import create_chat_router
 
 
-# 2) FastAPI App & CORS
-
-app = FastAPI()
+# FastAPI App & CORS
+app = FastAPI(title="Universal MCP Assistant", version="1.0.0")
 
 # If your frontend is on a different origin/port, adjust allow_origins accordingly.
 app.add_middleware(
@@ -28,94 +17,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Global instances
+letta_manager: LettaManager = None
+chat_service: ChatService = None
 
-#  3) Global Letta Variables 
-
-letta_client: Letta = None
-agent_state = None
-
-
-#  4) Startup Event: Initialize Letta, Register All MCP Tools, Create Agent 
 
 @app.on_event("startup")
 def startup_event():
-    global letta_client, agent_state
-
-    # 4.1) Instantiate Letta client (point to your local MCP server)
-    letta_client = Letta(base_url="http://localhost:8283")
-
-    # 4.2) List available MCP servers (for debugging/logging if needed)
-    all_mcp = letta_client.tools.list_mcp_servers()
+    """Initialize Letta, register all MCP tools, and create agent."""
+    global letta_manager, chat_service
+    
+    # Initialize Letta manager
+    letta_manager = LettaManager(base_url="http://localhost:8283")
+    letta_manager.initialize_client()
+    
+    # List available MCP servers (for debugging/logging if needed)
+    all_mcp = letta_manager.list_mcp_servers()
     # e.g. → [{"name": "toolbox", ...}, { "name": "github", ...}, ... ]
-
-    # 4.3) Choose the MCP server you want to pull tools from
+    
+    # Choose the MCP server you want to pull tools from
     mcp_server_name = "toolbox"
-    mcp_tools = letta_client.tools.list_mcp_tools_by_server(
-        mcp_server_name=mcp_server_name
-    )
-
-    # 4.4) Add each tool from that MCP server into Letta
-    tool_ids = []
-    for tool in mcp_tools:
-        added = letta_client.tools.add_mcp_tool(
-            mcp_server_name=mcp_server_name,
-            mcp_tool_name=tool.name
-        )
-        tool_ids.append(added.id)
-
-    # 4.5) Create a Letta agent that knows how to route requests through MCP
-    agent_state = letta_client.agents.create(
-        name="universal_mcp_assistant",
-        system=(
-            "Temporary System Prompt"
-        ),
-        model="openai/gpt-4o",
-        embedding="openai/text-embedding-3-small",
-        tool_ids=tool_ids,
-        tool_rules=[
-            ChildToolRule(tool_name="use_tool", children=["send_message"]),
-        ]
-    )
+    tool_ids = letta_manager.setup_mcp_tools(mcp_server_name)
+    
+    # Create agent with the tools
+    letta_manager.create_agent(tool_ids)
+    
+    # Initialize chat service
+    chat_service = ChatService(letta_manager)
+    
+    # Add chat router
+    chat_router = create_chat_router(chat_service)
+    app.include_router(chat_router)
 
 
-#  5) /chat Endpoint 
-
-@app.post("/chat", response_model=ChatResponse)
-async def chat_endpoint(req: ChatRequest):
-    """
-    Accepts { "message": "<user’s text>" }, forwards it to Letta,
-    and returns { "reply": "<assistant’s response>" }.
-    """
-    user_prompt = req.message.strip()
-    if not user_prompt:
-        raise HTTPException(status_code=400, detail="Empty message")
-
-    # 5.1) Build the single “user” message payload
-    payload = [
-        {"role": "user", "content": user_prompt}
-    ]
-
-    try:
-        # 5.2) Have Letta’s agent process that single‐turn conversation
-        response = letta_client.agents.messages.create(
-            agent_id=agent_state.id,
-            messages=payload,
-        )
-
-        # 5.3) Pull out all “assistant_message” contents in one line
-        assistant_contents = [
-            msg.content
-            for msg in response.messages
-            if msg.message_type == "assistant_message"
-        ]
-
-        # 5.4) If there was no assistant message, that’s unexpected
-        if not assistant_contents:
-            raise HTTPException(status_code=500, detail="No assistant reply found")
-
-        # 5.5) Return the first assistant reply
-        return ChatResponse(reply=assistant_contents[0])
-
-    except Exception as e:
-        # Catch any Letta or network errors
-        raise HTTPException(status_code=500, detail=f"Error from Letta: {e}")
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
