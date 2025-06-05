@@ -179,25 +179,6 @@ The Letta agent is configured with:
 - Embedding: `openai/text-embedding-3-small`
 - Tool routing through MCP servers
 
-## Development
-
-### Adding New API Routes
-
-1. Create a new router in `src/api/`
-2. Define your endpoints
-3. Register the router in `main.py`
-
-### Adding New Services
-
-1. Create service classes in `src/core/`
-2. Implement business logic
-3. Inject dependencies as needed
-
-### Adding New Models
-
-1. Define Pydantic models in `src/models/`
-2. Use type hints for better IDE support
-3. Add validation as needed
 
 ## Troubleshooting
 
